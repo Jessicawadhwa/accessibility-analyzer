@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessibility Checker</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>Accessibility Analyzer</h1>
+
+  <form id="urlForm" method="POST">
+    <label for="urlInput" class="visually-hidden">Website URL</label>
+    <input
+      type="text"
+      id="urlInput"
+      name="url"
+      placeholder="Enter URL to check"
+      required
+    />
+    <button type="submit">Check Accessibility</button>
+  </form>
+
+  <table id="resultsTable" style="display: none" role="table">
+    <thead>
+      <tr>
+        <th>Violation</th>
+        <th>Description</th>
+        <th>Element</th>
+      </tr>
+    </thead>
+    <tbody id="resultsBody"></tbody>
+  </table>
+
+  <script>
+    document.getElementById("urlForm").onsubmit = async function (e) {
+      e.preventDefault();
+      const url = document.getElementById("urlInput").value;
+
+      try {
+        const response = await fetch("/check", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          alert("❌ Error: " + (errorData.error || "Something went wrong"));
+          return;
+        }
+
+        const data = await response.json();
+        displayResults(data);
+      } catch (err) {
+        console.error("❌ Network error:", err);
+        alert("❌ Failed to connect to the server.");
+      }
+    };
+
+    function displayResults(results) {
+      const table = document.getElementById("resultsTable");
+      const tbody = document.getElementById("resultsBody");
+      tbody.innerHTML = "";
+
+      if (!results || !results.violations || results.violations.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3">🎉 No accessibility violations found!</td></tr>`;
+        table.style.display = "table";
+        return;
+      }
+
+      results.violations.forEach((violation) => {
+        const tr = document.createElement("tr");
+
+        const tdId = document.createElement("td");
+        tdId.textContent = violation.id;
+
+        const tdDesc = document.createElement("td");
+        tdDesc.textContent = violation.description;
+
+        const tdElement = document.createElement("td");
+        tdElement.innerHTML = `<code>${violation.nodes.map(node => node.html).join(', ')}</code>`;
+
+        tr.appendChild(tdId);
+        tr.appendChild(tdDesc);
+        tr.appendChild(tdElement);
+        tbody.appendChild(tr);
+      });
+
+      table.style.display = "table";
+    }
+  </script>
+
+  <footer>
+    <p>&copy; 2025 Accessibility Analyzer</p>
+    <p>
+      Visit us at <a href="https://accessibilityanalyzer.com" target="_blank">accessibilityanalyzer.com</a><br>
+      Follow us on:
+      <a href="https://twitter.com/rastmobile" target="_blank">Twitter</a> |
+      <a href="https://facebook.com/rastmobile" target="_blank">Facebook</a> |
+      <a href="https://instagram.com/mobilerast" target="_blank">Instagram</a> |
+      <a href="https://linkedin.com/company/rastmobile" target="_blank">LinkedIn</a>
+    </p>
+  </footer>
+</body>
+</html>
